@@ -22,8 +22,8 @@ Follow these steps to set up MongoDB Atlas for your MedGuideAI project.
 
 1. You'll see a security popup "Create a database user"
 2. Choose **"Username and Password"**
-3. Set username: `medguide`
-4. Set password: `medguide123` (or create your own secure password)
+3. Set username: `medguide` (or any username you prefer)
+4. Set password: Use a strong, secure password (remember this!)
 5. Click **"Create User"**
 
 ## Step 4: Add IP Address
@@ -52,8 +52,10 @@ Follow these steps to set up MongoDB Atlas for your MedGuideAI project.
 
 Example:
 ```env
-MONGODB_URI=mongodb+srv://medguide:medguide123@cluster0.xxxxx.mongodb.net/medguide?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/medguide?retryWrites=true&w=majority
 ```
+
+⚠️ **IMPORTANT:** Replace `<username>` and `<password>` with your actual credentials. Never commit credentials to git!
 
 ## Step 7: Test Connection
 
