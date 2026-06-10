@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedGuideAI Database Viewer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            font-size: 18px;
+            margin: 40px 0;
+        }
+        
+        .prescription {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .prescription:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .prescription-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .prescription-id {
+            font-family: monospace;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        
+        .prescription-date {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .prescription-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .text-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .text-section h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .text-content {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .medications {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .medication-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #28a745;
+        }
+        
+        .medication-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .medication-details {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            font-size: 18px;
+            margin: 40px 0;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .processing-time {
+            background: #17a2b8;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 MedGuideAI Database Viewer</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalPrescriptions">-</div>
+                <div>Total Prescriptions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalMedications">-</div>
+                <div>Total Medications</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgProcessingTime">-</div>
+                <div>Avg Processing Time (ms)</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="loadPrescriptions()">🔄 Refresh Data</button>
+            <button onclick="clearAllData()" style="background: #dc3545;">🗑️ Clear All Data</button>
+            <button onclick="addTestData()" style="background: #28a745;">🧪 Add Test Data</button>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            Loading prescriptions...
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="prescriptions"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        
+        // Load prescriptions on page load
+        document.addEventListener('DOMContentLoaded', loadPrescriptions);
+        
+        async function loadPrescriptions() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const prescriptions = document.getElementById('prescriptions');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            prescriptions.innerHTML = '';
+            
+            try {
+                const response = await fetch(`${API_BASE}/prescriptions`);
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    displayPrescriptions(data.data);
+                    updateStats(data.data);
+                } else {
+                    throw new Error(data.message || 'Failed to load prescriptions');
+                }
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = `Error: ${err.message}. Make sure your backend is running on port 5000.`;
+            }
+        }
+        
+        function displayPrescriptions(data) {
+            const container = document.getElementById('prescriptions');
+            
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📋 No Prescriptions Yet</h3>
+                        <p>Upload a prescription through your app to see data here!</p>
+                        <p>Or click "Add Test Data" to see how it looks.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = data.map(prescription => `
+                <div class="prescription">
+                    <div class="prescription-header">
+                        <div>
+                            <span class="prescription-id">${prescription._id}</span>
+                            <span class="processing-time">${prescription.processingTime || 0}ms</span>
+                        </div>
+                        <div class="prescription-date">
+                            ${new Date(prescription.uploadDate).toLocaleString()}
+                        </div>
+                    </div>
+                    
+                    <div class="prescription-content">
+                        <div>
+                            <div class="text-section">
+                                <h4>📄 Original OCR Text</h4>
+                                <div class="text-content">${prescription.originalText || 'No text available'}</div>
+                            </div>
+                            
+                            <div class="text-section" style="margin-top: 15px;">
+                                <h4>✨ Processed Text</h4>
+                                <div class="text-content">${prescription.processedText || 'No processed text'}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="medications">
+                            <h4>💊 Medications (${prescription.medications?.length || 0})</h4>
+                            ${prescription.medications?.map(med => `
+                                <div class="medication-item">
+                                    <div class="medication-name">${med.name}</div>
+                                    <div class="medication-details">
+                                        <strong>Dosage:</strong> ${med.dosage}<br>
+                                        <strong>Frequency:</strong> ${med.frequency}<br>
+                                        <strong>Instructions:</strong> ${med.instructions}
+                                    </div>
+                                </div>
+                            `).join('') || '<p>No medications found</p>'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updateStats(data) {
+            const totalPrescriptions = data.length;
+            const totalMedications = data.reduce((sum, p) => sum + (p.medications?.length || 0), 0);
+            const avgProcessingTime = data.length > 0 
+                ? Math.round(data.reduce((sum, p) => sum + (p.processingTime || 0), 0) / data.length)
+                : 0;
+            
+            document.getElementById('totalPrescriptions').textContent = totalPrescriptions;
+            document.getElementById('totalMedications').textContent = totalMedications;
+            document.getElementById('avgProcessingTime').textContent = avgProcessingTime;
+        }
+        
+        async function clearAllData() {
+            if (!confirm('Are you sure you want to delete ALL prescriptions? This cannot be undone!')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/prescriptions`);
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    for (const prescription of data.data) {
+                        await fetch(`${API_BASE}/prescriptions/${prescription._id}`, {
+                            method: 'DELETE'
+                        });
+                    }
+                    alert('All prescriptions deleted successfully!');
+                    loadPrescriptions();
+                } else {
+                    alert('No prescriptions to delete.');
+                }
+            } catch (err) {
+                alert(`Error deleting prescriptions: ${err.message}`);
+            }
+        }
+        
+        async function addTestData() {
+            try {
+                // Create a test file
+                const testFile = new File(['test prescription image'], 'test-prescription.jpg', {
+                    type: 'image/jpeg'
+                });
+                
+                const formData = new FormData();
+                formData.append('prescription', testFile);
+                
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Test prescription added successfully!');
+                    loadPrescriptions();
+                } else {
+                    throw new Error(result.message || 'Failed to add test data');
+                }
+            } catch (err) {
+                alert(`Error adding test data: ${err.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
